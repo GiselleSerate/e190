@@ -1,0 +1,2 @@
+
+-DCATKIN_DEVEL_PREFIX=/home/gserate/e190_ws/devel -DCMAKE_INSTALL_PREFIX=/home/gserate/e190_ws/install -G Unix Makefiles
