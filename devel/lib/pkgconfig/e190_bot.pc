@@ -1,0 +1,8 @@
+prefix=/home/gserate/e190_ws/devel
+
+Name: e190_bot
+Description: Description of e190_bot
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/gserate/e190_ws/devel/lib 
+Requires: 
