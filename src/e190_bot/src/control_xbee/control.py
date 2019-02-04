@@ -20,7 +20,7 @@ class botControl:
 
         # setup xbee communication, change ttyUSB0 to the USB port dongle is in
         if (self.robot_mode == "HARDWARE_MODE"):
-            self.serial_port = serial.Serial('/dev/ttyUSB1', 9600)
+            self.serial_port = serial.Serial('/dev/ttyUSB0', 9600)
             print(" Setting up serial port")
             try:
                 self.xbee = XBee(self.serial_port)
