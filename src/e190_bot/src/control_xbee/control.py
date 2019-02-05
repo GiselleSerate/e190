@@ -12,8 +12,12 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 rospack = rospkg.RosPack()
 
 class botControl:
+    """A class for controlling a two wheeled robot with three IR sensors and three encoders.
+    This class communicates with the robot using an xbee enabling the robot to move, rotate
+    and view the environemnt with IR sensors."""
 
     def __init__(self):
+        "Initializes communication over the xbee and inital hardware values."
         # create vars for hardware vs simulation
         self.robot_mode = "HARDWARE_MODE"#"SIMULATION_MODE"
         #self.control_mode = "MANUAL_CONTROL_MODE"
@@ -26,19 +30,20 @@ class botControl:
                 self.xbee = XBee(self.serial_port)
             except:
                 print("Couldn't find the serial port")
-        
+
         print("Xbee setup successful")
         self.address = '\x00\x0C'#you may use this to communicate with multiple bots
 
         #init an odometry instance, and configure odometry info
         self.odom_init()
-        
+
         #init log file, "False" indicate no log will be made, log will be in e190_bot/data folder
         self.log_init(data_logging=False,file_name="log.txt")
 
+        # Creates ROS nodes and a topic to control movement
         rospy.init_node('botControl', anonymous=True)
         rospy.Subscriber("/cmd_vel", Twist, self.cmd_vel_callback)
-        
+
         self.pubOdom = rospy.Publisher('/odom', Odometry, queue_size=10)
 
         #self.pubDistL = rospy.Publisher('/distL', ir_sensor, queue_size=10)
@@ -47,6 +52,7 @@ class botControl:
         self.time = rospy.Time.now()
         self.count = 0;
 
+        # Sets publishing rate
         self.rate = rospy.Rate(2)
         while not rospy.is_shutdown():
             self.odom_pub();
@@ -58,6 +64,7 @@ class botControl:
     #     self.ir_R = ir_sensor()
 
     def odom_init(self):
+        """Initializes the odometer variables for distance measurements."""
         self.Odom = Odometry()
         self.Odom.header.frame_id = "odom_wheel"
         self.Odom.child_frame_id = "base_link"
@@ -66,12 +73,18 @@ class botControl:
         self.wheel_radius = .1 #unit in m, need re-measurement
 
     def log_init(self,data_logging=False,file_name="log.txt"):
+        """Innitializes logging of key events."""
         self.data_logging=data_logging
         if(data_logging):
             self.file_name = file_name
             self.make_headers();
 
     def cmd_vel_callback(self,CmdVel):
+        """Converts input: CmdVel a ROS message composed of two 3-vectors named
+                linear and angular
+            to values that the robot understands and sends them to the robot
+            over the xbee.
+            """
         if(self.robot_mode == "HARDWARE_MODE"):
 
             #update this!!
@@ -112,11 +125,11 @@ class botControl:
 
             #how about velocity?
             time_diff = rospy.Time.now() - self.time
-            #self.last_encoder_measurementL =  
-            #self.last_encoder_measurementR =  
-            #self.diffEncoderL = 
-            #self.diffEncoderR = 
-            
+            #self.last_encoder_measurementL =
+            #self.last_encoder_measurementR =
+            #self.diffEncoderL =
+            #self.diffEncoderR =
+
             self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
             self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
             self.Odom.pose.pose.position.z = .0
@@ -147,12 +160,12 @@ class botControl:
         self.time = rospy.Time.now()
 
     # def pubRangeSensor(self,ranges):
-        
+
     #     #May be you want to calibrate them now? Make a new function called "ir_cal"
     #     self.ir_L.distance = ir_cal(ranges[0])
     #     self.ir_C.distance = ir_cal(ranges[1])
     #     self.ir_R.distance = ir_cal(ranges[2])
-        
+
     #     self.pubDistL.publish(self.ir_L)
     #     self.pubDistC.publish(self.ir_C)
     #     self.pubDistR.publish(self.ir_R)
@@ -167,7 +180,7 @@ class botControl:
 
         # edit this line to have data logging of the data you care about
         data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
-        
+
         f.write(' '.join(data) + '\n')#maybe you don't want to log raw data??
         f.close()
 
