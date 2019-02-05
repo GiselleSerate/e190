@@ -87,21 +87,31 @@ class botControl:
             """
         if(self.robot_mode == "HARDWARE_MODE"):
 
-            #update this!!
-            if(CmdVel.angular.z < 0):
+            # Set motor speeds
+            LPWM =int(CmdVel.linear.x/1*255)
+            RPWM =int(CmdVel.linear.x/1*255)
+
+            # Set robot spin direction and offset
+            if(CmdVel.angular.z == 0): # Do not spin 
                 LDIR = 0
                 RDIR = 0
-            else:
-                LDIR = 1
+                spin = 0
+            elif(CmdVel.angular.z > 0): # Spin in +z direction (ccw)
+                LDIR = 0
                 RDIR = 1
+                spin = 70
+            else: # Spin in -z direction (cw)
+                LDIR = 1
+                RDIR = 0
+                spin = 70
 
-            RPWM =int(CmdVel.linear.x/1*255)
-            LPWM =int(CmdVel.linear.x/1*255)
+            # Offset PWMs so that at an x velocity of 0 we still spin in place
+            LPWM += spin
+            RPWM += spin
 
+            # Assemble command and send to terminal and robot
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
-            #print("subscriber working")
-
-            #command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
+            print(command)
             self.xbee.tx(dest_addr = self.address, data = command)
 
     def odom_pub(self):
