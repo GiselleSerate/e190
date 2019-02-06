@@ -92,7 +92,7 @@ class botControl:
             RPWM =int(CmdVel.linear.x/1*255)
 
             # Set robot spin direction and offset
-            if(CmdVel.angular.z == 0): # Do not spin 
+            if(CmdVel.angular.z == 0): # Do not spin
                 LDIR = 0
                 RDIR = 0
                 spin = 0
@@ -115,6 +115,8 @@ class botControl:
             self.xbee.tx(dest_addr = self.address, data = command)
 
     def odom_pub(self):
+        """Handles publishing of robot sensor data: sensor measurements and
+        encoder measurements."""
         if(self.robot_mode == "HARDWARE_MODE"):
             self.count = self.count + 1
             print(self.count)
@@ -181,11 +183,13 @@ class botControl:
     #     self.pubDistR.publish(self.ir_R)
 
     def make_headers(self):
+        """Makes necesary headers for communication."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
         f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
         f.close()
 
     def log_data(self):
+        """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
         # edit this line to have data logging of the data you care about
