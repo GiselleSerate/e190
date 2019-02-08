@@ -4,6 +4,7 @@ import rospkg
 from xbee import XBee
 import serial
 import tf
+import math # for trig functions
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -38,7 +39,7 @@ class botControl:
         self.odom_init()
 
         #init log file, "False" indicate no log will be made, log will be in e190_bot/data folder
-        self.log_init(data_logging=False,file_name="log.txt")
+        self.log_init(data_logging=True,file_name="log.txt")
 
         # Creates ROS nodes and a topic to control movement
         rospy.init_node('botControl', anonymous=True)
@@ -70,7 +71,13 @@ class botControl:
         self.Odom.child_frame_id = "/base_link"
         self.odom_broadcaster = tf.TransformBroadcaster()
         self.encoder_resolution = 1.0/1440.0
-        self.wheel_radius = .1 #unit in m, need re-measurement
+        # self.wheel_radius = .1 #unit in m, need re-measurement
+        self.wheel_radius = 0.025
+        self.bot_radius = 0.05
+        self.last_encoder_measurementL = 0
+        self.last_encoder_measurementR = 0
+        self.diffEncoderL = 0
+        self.diffEncoderR = 0
 
     def log_init(self,data_logging=False,file_name="log.txt"):
         """Initializes logging of key events."""
@@ -96,12 +103,10 @@ class botControl:
             over the xbee.
             """
         if(self.robot_mode == "HARDWARE_MODE"):
-            L = 0.05  # TODO: measure; 5cm
-            r = 0.025 # TODO: measure; 2.5cm
 
             # Keep as floats for now
-            LAvel = (CmdVel.linear.x - CmdVel.angular.z * L) / r
-            RAvel = (CmdVel.linear.x + CmdVel.angular.z * L) / r
+            LAvel = (CmdVel.linear.x - CmdVel.angular.z * self.bot_radius) / self.wheel_radius
+            RAvel = (CmdVel.linear.x + CmdVel.angular.z * self.bot_radius) / self.wheel_radius
 
             LPWM, RPWM = self.calibrate(LAvel, RAvel)
 
@@ -119,6 +124,11 @@ class botControl:
         if(self.robot_mode == "HARDWARE_MODE"):
             self.count = self.count + 1
             print(self.count)
+
+            # Save last encoder measurements
+            self.last_encoder_measurementL += self.diffEncoderL # How will this work uninitialized?
+            self.last_encoder_measurementR += self.diffEncoderR
+
             command = '$S @'
             self.xbee.tx(dest_addr = self.address, data = command)
             try:
@@ -136,13 +146,23 @@ class botControl:
 
             #how about velocity?
             time_diff = rospy.Time.now() - self.time
-            #self.last_encoder_measurementL =
-            #self.last_encoder_measurementR =
-            #self.diffEncoderL =
-            #self.diffEncoderR =
+            self.diffEncoderL = encoder_measurements[0]/10000.0 - self.last_encoder_measurementL
+            self.diffEncoderR = encoder_measurements[1]/10000.0 - self.last_encoder_measurementR
 
-            self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
-            self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
+            # If either measurement is old, reset encoder differences
+            if(self.diffEncoderL > 1000 or self.diffEncoderR > 1000):
+                self.diffEncoderL = 0
+                self.diffEncoderR = 0
+
+            del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
+            del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
+
+            # Calculate delta x and delta y 
+            self.Odom.pose.pose.position.x = del_s * math.cos(del_theta/2)
+            self.Odom.pose.pose.position.y = del_s * math.sin(del_theta/2)
+
+            # self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
+            # self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
             self.Odom.pose.pose.position.z = .0
             quat = quaternion_from_euler(.0, .0, .0)
             self.Odom.pose.pose.orientation.x = quat[0]
