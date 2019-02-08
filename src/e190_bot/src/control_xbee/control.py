@@ -79,6 +79,16 @@ class botControl:
             self.file_name = file_name
             self.make_headers();
 
+    def calibrate(self,LAvel,RAvel):
+        """Takes in left and right angular velocities of wheels and outputs
+        left and right PWM values."""
+        # Force angular velocities to ints and scale to 0-255
+        # TODO: calibrate this; currently set to "don't make scary noises from 0-1"
+        LPWM = int(abs(LAvel)/1 * 100)
+        RPWM = int(abs(RAvel)/1 * 100)
+
+        return LPWM, RPWM
+
     def cmd_vel_callback(self,CmdVel):
         """Converts input: CmdVel a ROS message composed of two 3-vectors named
                 linear and angular
@@ -86,28 +96,17 @@ class botControl:
             over the xbee.
             """
         if(self.robot_mode == "HARDWARE_MODE"):
+            L = 0.05  # TODO: measure; 5cm
+            r = 0.025 # TODO: measure; 2.5cm
 
-            # Set motor speeds
-            LPWM =int(CmdVel.linear.x/1*255)
-            RPWM =int(CmdVel.linear.x/1*255)
+            # Keep as floats for now
+            LAvel = (CmdVel.linear.x - CmdVel.angular.z * L) / r
+            RAvel = (CmdVel.linear.x + CmdVel.angular.z * L) / r
 
-            # Set robot spin direction and offset
-            if(CmdVel.angular.z == 0): # Do not spin
-                LDIR = 0
-                RDIR = 0
-                spin = 0
-            elif(CmdVel.angular.z > 0): # Spin in +z direction (ccw)
-                LDIR = 0
-                RDIR = 1
-                spin = 70
-            else: # Spin in -z direction (cw)
-                LDIR = 1
-                RDIR = 0
-                spin = 70
+            LPWM, RPWM = self.calibrate(LAvel, RAvel)
 
-            # Offset PWMs so that at an x velocity of 0 we still spin in place
-            LPWM += spin
-            RPWM += spin
+            LDIR = int(LAvel > 0)
+            RDIR = int(RAvel > 0)
 
             # Assemble command and send to terminal and robot
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
