@@ -73,7 +73,7 @@ class botControl:
         self.wheel_radius = .1 #unit in m, need re-measurement
 
     def log_init(self,data_logging=False,file_name="log.txt"):
-        """Innitializes logging of key events."""
+        """Initializes logging of key events."""
         self.data_logging=data_logging
         if(data_logging):
             self.file_name = file_name
@@ -182,7 +182,7 @@ class botControl:
     #     self.pubDistR.publish(self.ir_R)
 
     def make_headers(self):
-        """Makes necesary headers for communication."""
+        """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
         f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
         f.close()
