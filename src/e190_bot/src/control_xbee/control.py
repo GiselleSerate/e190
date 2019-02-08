@@ -53,7 +53,7 @@ class botControl:
         self.count = 0;
 
         # Sets publishing rate
-        self.rate = rospy.Rate(2)
+        self.rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
             self.odom_pub();
             self.rate.sleep();
@@ -66,8 +66,8 @@ class botControl:
     def odom_init(self):
         """Initializes the odometer variables for distance measurements."""
         self.Odom = Odometry()
-        self.Odom.header.frame_id = "odom_wheel"
-        self.Odom.child_frame_id = "base_link"
+        self.Odom.header.frame_id = "/odom"
+        self.Odom.child_frame_id = "/base_link"
         self.odom_broadcaster = tf.TransformBroadcaster()
         self.encoder_resolution = 1.0/1440.0
         self.wheel_radius = .1 #unit in m, need re-measurement
