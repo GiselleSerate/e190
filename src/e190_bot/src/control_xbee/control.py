@@ -93,16 +93,13 @@ class botControl:
         left and right PWM values."""
         # Force angular velocities to ints and scale to 0-255
         # TODO: calibrate this; currently set to "don't make scary noises from 0-1"
-        # LPWM = int(2.59*abs(LAvel)+9.94)
-        # RPWM = int(2.59*abs(RAvel)+9.94)
+        LPWM = int(11.608*abs(LAvel)+3.2461)
+        RPWM = int(11.134*abs(RAvel)+6.983)
 
-        # if(LPWM < 15):
-        #     LPWM = 0
-        # if(RPWM < 15):
-        #     RPWM = 0
-
-        LPWM = LAvel*self.wheel_radius
-        RPWM = RAvel*self.wheel_radius
+        if(LPWM < 15):
+            LPWM = 0
+        if(RPWM < 15):
+            RPWM = 0
 
         return LPWM, RPWM
 
