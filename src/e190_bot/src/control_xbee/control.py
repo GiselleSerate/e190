@@ -97,9 +97,13 @@ class botControl:
         RPWM = int(11.134*abs(RAvel)+6.983)
 
         if(LPWM < 15):
-            LPWM = 0
+            LPWM = 0 # Floor left
+        elif(LPWM > 255):
+            LPWM = 255 # Ceiling left
         if(RPWM < 15):
-            RPWM = 0
+            RPWM = 0 # Floor right
+        elif(RPWM > 255):
+            RPWM = 255 # Ceiling right
 
         return LPWM, RPWM
 
