@@ -124,7 +124,6 @@ class botControl:
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             print(command)
             self.xbee.tx(dest_addr = self.address, data = command)
-            self.log_pwm(LPWM, RPWM)
 
     def odom_pub(self):
         """Handles publishing of robot sensor data: sensor measurements and
@@ -210,28 +209,27 @@ class botControl:
     def make_headers(self):
         """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
-        # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} {5:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW', 'TIME'))
-        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
+        f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
+        # f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
         f.close()
 
     def log_pwm(self, LPWM, RPWM):
-        """Logs PWM for calibration reference."""
+        """Logs PWM changes for calibration."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
         data = [str(x) for x in ["------------------PWM-IS-NOW",LPWM,RPWM]]
 
-        f.write(' '.join(data) + '\n')#maybe you don't want to log raw data??
+        f.write(' '.join(data) + '\n')
         f.close()
 
     def log_data(self):
         """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
-        # edit this line to have data logging of the data you care about
-        # data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y,self.time%(10**8),self.diffEncoderL,self.diffEncoderR]]
-        data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
+        data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        # data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
-        f.write(' '.join(data) + '\n')#maybe you don't want to log raw data??
+        f.write(' '.join(data) + '\n')
         f.close()
 
 if __name__ == '__main__':
