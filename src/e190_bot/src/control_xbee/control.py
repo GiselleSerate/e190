@@ -23,6 +23,10 @@ class botControl:
         self.robot_mode = "HARDWARE_MODE"#"SIMULATION_MODE"
         #self.control_mode = "MANUAL_CONTROL_MODE"
 
+        # Measured bot parameters
+        self.wheel_radius = 0.035
+        self.bot_radius = 0.07
+
         # setup xbee communication, change ttyUSB0 to the USB port dongle is in
         if (self.robot_mode == "HARDWARE_MODE"):
             self.serial_port = serial.Serial('/dev/ttyUSB0', 9600)
@@ -71,13 +75,11 @@ class botControl:
         self.Odom.child_frame_id = "/base_link"
         self.odom_broadcaster = tf.TransformBroadcaster()
         self.encoder_resolution = 1.0/1440.0
-        # self.wheel_radius = .1 #unit in m, need re-measurement
-        self.wheel_radius = 0.025
-        self.bot_radius = 0.05
         self.last_encoder_measurementL = 0
         self.last_encoder_measurementR = 0
         self.diffEncoderL = 0
         self.diffEncoderR = 0
+        self.bot_angle = 0
 
     def log_init(self,data_logging=False,file_name="log.txt"):
         """Initializes logging of key events."""
@@ -91,8 +93,16 @@ class botControl:
         left and right PWM values."""
         # Force angular velocities to ints and scale to 0-255
         # TODO: calibrate this; currently set to "don't make scary noises from 0-1"
-        LPWM = int(abs(LAvel)/1 * 100)
-        RPWM = int(abs(RAvel)/1 * 100)
+        # LPWM = int(2.59*abs(LAvel)+9.94)
+        # RPWM = int(2.59*abs(RAvel)+9.94)
+
+        # if(LPWM < 15):
+        #     LPWM = 0
+        # if(RPWM < 15):
+        #     RPWM = 0
+
+        LPWM = LAvel*self.wheel_radius
+        RPWM = RAvel*self.wheel_radius
 
         return LPWM, RPWM
 
@@ -117,6 +127,7 @@ class botControl:
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             print(command)
             self.xbee.tx(dest_addr = self.address, data = command)
+            self.log_pwm(LPWM, RPWM)
 
     def odom_pub(self):
         """Handles publishing of robot sensor data: sensor measurements and
@@ -126,7 +137,7 @@ class botControl:
             print(self.count)
 
             # Save last encoder measurements
-            self.last_encoder_measurementL += self.diffEncoderL # How will this work uninitialized?
+            self.last_encoder_measurementL += self.diffEncoderL
             self.last_encoder_measurementR += self.diffEncoderR
 
             command = '$S @'
@@ -138,16 +149,12 @@ class botControl:
 
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
-            encoder_measurements = data[-2:] #encoder readings are here, 2d array
-
-            #print ("update sensors measurements ",encoder_measurements, range_measurements)
-
-            #Update here, the code is totally non-sense
+            encoder_measurements = [x * math.pi / 720 for x in data[-2:]] #encoder readings as radians, 2d array
 
             #how about velocity?
             time_diff = rospy.Time.now() - self.time
-            self.diffEncoderL = encoder_measurements[0]/10000.0 - self.last_encoder_measurementL
-            self.diffEncoderR = encoder_measurements[1]/10000.0 - self.last_encoder_measurementR
+            self.diffEncoderL = encoder_measurements[0] - self.last_encoder_measurementL
+            self.diffEncoderR = encoder_measurements[1] - self.last_encoder_measurementR
 
             # If either measurement is old, reset encoder differences
             if(self.diffEncoderL > 1000 or self.diffEncoderR > 1000):
@@ -157,14 +164,16 @@ class botControl:
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
-            # Calculate delta x and delta y 
-            self.Odom.pose.pose.position.x = del_s * math.cos(del_theta/2)
-            self.Odom.pose.pose.position.y = del_s * math.sin(del_theta/2)
+            # Update x and y with deltas 
+            self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
+            self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
 
             # self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
             # self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
             self.Odom.pose.pose.position.z = .0
-            quat = quaternion_from_euler(.0, .0, .0)
+            self.bot_angle += del_theta
+            self.bot_angle = self.bot_angle % (2*math.pi) # Loop
+            quat = quaternion_from_euler(.0, .0, self.bot_angle)
             self.Odom.pose.pose.orientation.x = quat[0]
             self.Odom.pose.pose.orientation.y = quat[1]
             self.Odom.pose.pose.orientation.z = quat[2]
@@ -173,7 +182,7 @@ class botControl:
             # #https://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
             self.odom_broadcaster.sendTransform(
                 (self.Odom.pose.pose.position.x, self.Odom.pose.pose.position.y, .0),
-                tf.transformations.quaternion_from_euler(.0, .0, 1.57),
+                tf.transformations.quaternion_from_euler(.0, .0, self.bot_angle),
                 rospy.Time.now(),
                 self.Odom.child_frame_id,
                 self.Odom.header.frame_id,
@@ -204,7 +213,17 @@ class botControl:
     def make_headers(self):
         """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
-        f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
+        # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} {5:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW', 'TIME'))
+        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
+        f.close()
+
+    def log_pwm(self, LPWM, RPWM):
+        """Logs PWM for calibration reference."""
+        f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
+
+        data = [str(x) for x in ["------------------PWM-IS-NOW",LPWM,RPWM]]
+
+        f.write(' '.join(data) + '\n')#maybe you don't want to log raw data??
         f.close()
 
     def log_data(self):
@@ -212,7 +231,8 @@ class botControl:
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
         # edit this line to have data logging of the data you care about
-        data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        # data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y,self.time%(10**8),self.diffEncoderL,self.diffEncoderR]]
+        data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
         f.write(' '.join(data) + '\n')#maybe you don't want to log raw data??
         f.close()
