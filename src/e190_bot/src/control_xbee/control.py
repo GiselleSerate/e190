@@ -113,15 +113,15 @@ class botControl:
             over the xbee.
             """
         if(self.robot_mode == "HARDWARE_MODE"):
-
             # Keep as floats for now
             LAvel = (CmdVel.linear.x - CmdVel.angular.z * self.bot_radius) / self.wheel_radius
             RAvel = (CmdVel.linear.x + CmdVel.angular.z * self.bot_radius) / self.wheel_radius
 
             LPWM, RPWM = self.calibrate(LAvel, RAvel)
 
-            LDIR = int(LAvel > 0)
-            RDIR = int(RAvel > 0)
+            # Invert direction so +x is forward
+            LDIR = int(LAvel < 0)
+            RDIR = int(RAvel < 0)
 
             # Assemble command and send to terminal and robot
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
