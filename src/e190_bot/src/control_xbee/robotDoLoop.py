@@ -6,7 +6,7 @@ import math
 from geometry_msgs.msg import Twist, Vector3
 
 forward_velocity = .5        # m/sec
-rotate_velocity = math.pi*/4 # rad/sec
+rotate_velocity = math.pi # rad/sec
 
 def robotDoLoop():
     pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
@@ -26,14 +26,15 @@ def robotDoLoop():
 
     cmds = [do_nothing, go_forward, do_nothing, do_rotation]*4 + [do_nothing]
     cmd_step = 0
-    sleep_times = {do_nothing: 0.5, go_forward: 2.0, do_rotation: 2.0}
+    sleep_times = {do_nothing: 0.5, go_forward: 2.0, do_rotation: 0.5}
 
     while not rospy.is_shutdown() and cmd_step < len(cmds):
-        cmd = cmds(cmd_step)
+        cmd = cmds[cmd_step]
         sleep_time = sleep_times[cmd]
-        rospy.loginfo(cmd, sleep_time)
+        # rospy.loginfo(cmd, sleep_time)
         pub.publish(cmd)
         rospy.sleep(sleep_time)
+        cmd_step += 1
 
 if __name__ == '__main__':
     try:

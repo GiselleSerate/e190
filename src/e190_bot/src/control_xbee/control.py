@@ -115,8 +115,8 @@ class botControl:
             """
         if(self.robot_mode == "HARDWARE_MODE"):
             # Keep as floats for now
-            LAvel = (CmdVel.linear.x - CmdVel.angular.z * self.bot_radius) / self.wheel_radius
-            RAvel = (CmdVel.linear.x + CmdVel.angular.z * self.bot_radius) / self.wheel_radius
+            LAvel = (CmdVel.linear.x + CmdVel.angular.z * self.bot_radius) / self.wheel_radius
+            RAvel = (CmdVel.linear.x - CmdVel.angular.z * self.bot_radius) / self.wheel_radius
 
             LPWM, RPWM = self.calibrate(LAvel, RAvel)
 
@@ -127,6 +127,7 @@ class botControl:
             # Assemble command and send to terminal and robot
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             print(command)
+            self.log_pwm(LPWM, RPWM)
             self.xbee.tx(dest_addr = self.address, data = command)
 
     def odom_pub(self):
@@ -213,8 +214,8 @@ class botControl:
     def make_headers(self):
         """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
-        f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        # f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
+        # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
+        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
         f.close()
 
     def log_pwm(self, LPWM, RPWM):
@@ -230,8 +231,8 @@ class botControl:
         """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
-        data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
-        # data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
+        # data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
         f.write(' '.join(data) + '\n')
         f.close()
