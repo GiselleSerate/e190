@@ -57,6 +57,11 @@ class botControl:
         self.time = rospy.Time.now()
         self.count = 0;
 
+        # Variables for calibration
+        self.cal = 0
+        self.cal_accumulate_l = 0
+        self.cal_accumulate_r = 0
+
         # Sets publishing rate
         self.rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
@@ -127,8 +132,29 @@ class botControl:
             # Assemble command and send to terminal and robot
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             print(command)
-            self.log_pwm(LPWM, RPWM)
             self.xbee.tx(dest_addr = self.address, data = command)
+
+    def calibrate_callback(self, Calibrate):
+        """Puts the robot in or out of calibration mode."""
+        self.cal = Calibrate
+
+    def cmd_pwm_callback(self.CmdPwm):
+        """Responds to commands phrased as a vector of left, right PWM."""
+        if(self.robot_mode == "HARDWARE_MODE"):
+            # TODO do we want normal non-calibrate cmd_pwm? 
+            # Assemble command and send to terminal and robot
+            command = '$M ' + str(int(CmdPwm[0]<0)) + ' ' + str(abs(CmdPwm[0])) + ' ' + str(int(CmdPwm[1]<0)) + ' ' + str(abs(CmdPwm[1])) + '@'
+            print("Calibrating with: "+command)
+            self.xbee.tx(dest_addr = self.address, data = command)
+            self.cal_accumulate_l = 0
+            self.cal_accumulate_r = 0
+            cal_time = rospy.Time.now()
+            rospy.sleep(5) # Wait for 5 seconds as you calibrate
+            cal_time = rospy.Time.now() - cal_time
+            cal_angle_l = cal_accumulate_l
+            cal_angle_r = cal_accumulate_r
+            if(self.calibrate): 
+                self.log_cal(CmdPwm[0], CmdPwm[1], cal_angle_l, cal_angle_r)
 
     def odom_pub(self):
         """Handles publishing of robot sensor data: sensor measurements and
@@ -161,6 +187,9 @@ class botControl:
             if(self.diffEncoderL > 1000 or self.diffEncoderR > 1000):
                 self.diffEncoderL = 0
                 self.diffEncoderR = 0
+
+            self.cal_accumulate_l += diffEncoderL
+            self.cal_accumulate_r += diffEncoderR
 
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
@@ -216,6 +245,15 @@ class botControl:
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
         f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
+        f.close()
+
+    def log_cal(self, LPWM, RPWM, LAng, RAng):
+        """Log PWMs and angular velocities for calibration. Sorry, no headers for now."""
+        f = open(rospack.get_path('e190_bot')+"/data/cal"+self.file_name, 'a+')
+
+        data = [str(x) for x in [LPWM,RPWM,LAng,RAng]]
+
+        f.write(' '.join(data) + '\n')
         f.close()
 
     def log_pwm(self, LPWM, RPWM):
