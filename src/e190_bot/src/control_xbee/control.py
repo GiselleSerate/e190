@@ -6,10 +6,9 @@ import serial
 import tf
 import math # for trig functions
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
-from std_msgs.msg import Bool
 
 rospack = rospkg.RosPack()
 
@@ -188,8 +187,8 @@ class botControl:
                 self.diffEncoderL = 0
                 self.diffEncoderR = 0
 
-            self.cal_accumulate_l += diffEncoderL
-            self.cal_accumulate_r += diffEncoderR
+            self.cal_accumulate_l += self.diffEncoderL
+            self.cal_accumulate_r += self.diffEncoderR
 
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
