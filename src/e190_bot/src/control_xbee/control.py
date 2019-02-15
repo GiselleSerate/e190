@@ -151,8 +151,8 @@ class botControl:
             cal_time = rospy.Time.now()
             rospy.sleep(5) # Wait for 5 seconds as you calibrate
             cal_time = rospy.Time.now() - cal_time
-            cal_angle_l = cal_accumulate_l
-            cal_angle_r = cal_accumulate_r
+            cal_angle_l = self.cal_accumulate_l
+            cal_angle_r = self.cal_accumulate_r
             self.log_cal(CmdPwm.x, CmdPwm.y, cal_angle_l, cal_angle_r)
 
     def odom_pub(self):
