@@ -15,8 +15,10 @@ def calibrate_callback(data):
 
         while pwn[1] < 256:
             pub.publish(Vector3(pwm[0], pwm[1], 0))
-            rospy.sleep(6) # seconds
+            rospy.sleep(5) # seconds
             pwm = [pwm[0] - step_size, pwm[1] + step_size]
+            pub.publish(Vector3(0, 0, 0))
+            rospy.sleep(0.5) # seconds
 
 def listener():
 
