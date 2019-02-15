@@ -10,11 +10,11 @@ step_size = 20
 
 def calibrate_callback(data):
     if data.data:
-        pub = rospy.Publisher('/cmd_pwm', Vector2, queue_size=10)
+        pub = rospy.Publisher('/cmd_pwm', Vector3, queue_size=10)
         pwm = [-20,20]
 
         while pwn[1] < 256:
-            pub.publish(Vector2(pwm[0], pwm[1]))
+            pub.publish(Vector3(pwm[0], pwm[1], 0))
             rospy.sleep(6) # seconds
             pwm = [pwm[0] - step_size, pwm[1] + step_size]
 
