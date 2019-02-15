@@ -61,6 +61,8 @@ class botControl:
         self.cal = 0
         self.cal_accumulate_l = 0
         self.cal_accumulate_r = 0
+        rospy.Subscriber("/calibrate", Bool, self.calibrate_callback)
+        rospy.Subscriber("/cmd_pwm", Vector2, self.cmd_pwm_callback)
 
         # Sets publishing rate
         self.rate = rospy.Rate(10) # 10hz
