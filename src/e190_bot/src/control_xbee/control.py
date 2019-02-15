@@ -6,7 +6,7 @@ import serial
 import tf
 import math # for trig functions
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
@@ -58,11 +58,9 @@ class botControl:
         self.count = 0;
 
         # Variables for calibration
-        self.cal = 0
         self.cal_accumulate_l = 0
         self.cal_accumulate_r = 0
-        rospy.Subscriber("/calibrate", Bool, self.calibrate_callback)
-        rospy.Subscriber("/cmd_pwm", Vector2, self.cmd_pwm_callback)
+        rospy.Subscriber("/cmd_pwm", Vector3, self.cmd_pwm_callback)
 
         # Sets publishing rate
         self.rate = rospy.Rate(10) # 10hz
@@ -138,14 +136,14 @@ class botControl:
 
     def calibrate_callback(self, Calibrate):
         """Puts the robot in or out of calibration mode."""
-        self.cal = Calibrate
+        self.cal = Calibrate.data
 
-    def cmd_pwm_callback(self.CmdPwm):
+    def cmd_pwm_callback(self, CmdPwm):
         """Responds to commands phrased as a vector of left, right PWM."""
         if(self.robot_mode == "HARDWARE_MODE"):
             # TODO do we want normal non-calibrate cmd_pwm? 
             # Assemble command and send to terminal and robot
-            command = '$M ' + str(int(CmdPwm[0]<0)) + ' ' + str(abs(CmdPwm[0])) + ' ' + str(int(CmdPwm[1]<0)) + ' ' + str(abs(CmdPwm[1])) + '@'
+            command = '$M ' + str(int(CmdPwm.x<0)) + ' ' + str(abs(CmdPwm.x)) + ' ' + str(int(CmdPwm.y<0)) + ' ' + str(abs(CmdPwm.y)) + '@'
             print("Calibrating with: "+command)
             self.xbee.tx(dest_addr = self.address, data = command)
             self.cal_accumulate_l = 0
@@ -155,8 +153,7 @@ class botControl:
             cal_time = rospy.Time.now() - cal_time
             cal_angle_l = cal_accumulate_l
             cal_angle_r = cal_accumulate_r
-            if(self.calibrate): 
-                self.log_cal(CmdPwm[0], CmdPwm[1], cal_angle_l, cal_angle_r)
+            self.log_cal(CmdPwm.x, CmdPwm.y, cal_angle_l, cal_angle_r)
 
     def odom_pub(self):
         """Handles publishing of robot sensor data: sensor measurements and
@@ -190,8 +187,8 @@ class botControl:
                 self.diffEncoderL = 0
                 self.diffEncoderR = 0
 
-            self.cal_accumulate_l += diffEncoderL
-            self.cal_accumulate_r += diffEncoderR
+            self.cal_accumulate_l += self.diffEncoderL
+            self.cal_accumulate_r += self.diffEncoderR
 
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
