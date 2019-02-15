@@ -13,7 +13,7 @@ def calibrate_callback(data):
         pub = rospy.Publisher('/cmd_pwm', Vector3, queue_size=10)
         pwm = [-20,20]
 
-        while pwn[1] < 256:
+        while pwm[1] < 256:
             pub.publish(Vector3(pwm[0], pwm[1], 0))
             rospy.sleep(5) # seconds
             pwm = [pwm[0] - step_size, pwm[1] + step_size]
@@ -29,7 +29,7 @@ def listener():
     # run simultaneously.
     rospy.init_node('calibrate', anonymous=True)
 
-    rospy.Subscriber("/calibrate", Bool, self.calibrate_callback)
+    rospy.Subscriber("/calibrate", Bool, calibrate_callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
