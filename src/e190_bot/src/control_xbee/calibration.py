@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 import math
 from std_msgs.msg import Bool
-from geometry_msgs.msg import Vector2
+from geometry_msgs.msg import Vector3
 
 step_size = 20
 
