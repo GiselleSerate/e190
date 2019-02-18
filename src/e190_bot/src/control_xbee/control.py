@@ -92,7 +92,6 @@ class botControl:
         """Takes in left and right angular velocities of wheels and outputs
         left and right PWM values."""
         # Force angular velocities to ints and scale to 0-255
-        # TODO: calibrate this; currently set to "don't make scary noises from 0-1"
         LPWM = int(11.608*abs(LAvel)+3.2461)
         RPWM = int(11.134*abs(RAvel)+6.983)
 
@@ -169,8 +168,6 @@ class botControl:
             self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
             self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
 
-            # self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
-            # self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
             self.Odom.pose.pose.position.z = .0
             self.bot_angle += del_theta
             self.bot_angle = self.bot_angle % (2*math.pi) # Loop
