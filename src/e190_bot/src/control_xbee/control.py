@@ -198,9 +198,13 @@ class botControl:
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
+            print("odom pre: "+str(self.Odom.pose.pose.position.x)+" x "+str(self.Odom.pose.pose.position.x))
+
             # Update x and y with deltas 
             self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
             self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
+
+            print("odom post: "+str(self.Odom.pose.pose.position.x)+" x "+str(self.Odom.pose.pose.position.x))
 
             # self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
             # self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
