@@ -79,6 +79,9 @@ class botControl:
         self.Odom.header.frame_id = "/odom"
         self.Odom.child_frame_id = "/base_link"
         self.odom_broadcaster = tf.TransformBroadcaster()
+        self.Odom.pose.pose.position.x = 0
+        self.Odom.pose.pose.position.y = 0
+        self.Odom.pose.pose.position.z = 0
         self.encoder_resolution = 1.0/1440.0
         self.last_encoder_measurementL = 0
         self.last_encoder_measurementR = 0
@@ -97,7 +100,6 @@ class botControl:
         """Takes in left and right angular velocities of wheels and outputs
         left and right PWM values."""
         # Force angular velocities to ints and scale to 0-255
-        # TODO: calibrate this; currently set to "don't make scary noises from 0-1"
         LPWM = int(11.608*abs(LAvel)+3.2461)
         RPWM = int(11.134*abs(RAvel)+6.983)
 
@@ -143,7 +145,9 @@ class botControl:
         if(self.robot_mode == "HARDWARE_MODE"):
             # TODO do we want normal non-calibrate cmd_pwm? 
             # Assemble command and send to terminal and robot
-            command = '$M ' + str(int(CmdPwm.x<0)) + ' ' + str(abs(CmdPwm.x)) + ' ' + str(int(CmdPwm.y<0)) + ' ' + str(abs(CmdPwm.y)) + '@'
+            savePWMX = CmdPwm.x
+            savePWMY = CmdPwm.y 
+            command = '$M ' + str(int(savePWMX<0)) + ' ' + str(abs(savePWMX)) + ' ' + str(int(savePWMY<0)) + ' ' + str(abs(savePWMY)) + '@'
             print("Calibrating with: "+command)
             self.xbee.tx(dest_addr = self.address, data = command)
             self.cal_accumulate_l = 0
@@ -153,7 +157,8 @@ class botControl:
             cal_time = rospy.Time.now() - cal_time
             cal_angle_l = self.cal_accumulate_l
             cal_angle_r = self.cal_accumulate_r
-            self.log_cal(CmdPwm.x, CmdPwm.y, cal_angle_l, cal_angle_r)
+            print("LOGGING OMG: "+str(savePWMX)+" "+str(savePWMY)+" x "+str(cal_angle_l)+" x "+str(cal_angle_r))
+            self.log_cal(savePWMX, savePWMY, cal_angle_l, cal_angle_r)
 
     def odom_pub(self):
         """Handles publishing of robot sensor data: sensor measurements and
@@ -161,10 +166,6 @@ class botControl:
         if(self.robot_mode == "HARDWARE_MODE"):
             self.count = self.count + 1
             print(self.count)
-
-            # Save last encoder measurements
-            self.last_encoder_measurementL += self.diffEncoderL
-            self.last_encoder_measurementR += self.diffEncoderR
 
             command = '$S @'
             self.xbee.tx(dest_addr = self.address, data = command)
@@ -177,10 +178,14 @@ class botControl:
             data = [int(x) for x in data]
             encoder_measurements = [x * math.pi / 720 for x in data[-2:]] #encoder readings as radians, 2d array
 
-            #how about velocity?
+            # Calculate differences
             time_diff = rospy.Time.now() - self.time
             self.diffEncoderL = encoder_measurements[0] - self.last_encoder_measurementL
             self.diffEncoderR = encoder_measurements[1] - self.last_encoder_measurementR
+
+            # Save old measurements
+            self.last_encoder_measurementL = encoder_measurements[0]
+            self.last_encoder_measurementR = encoder_measurements[1]
 
             # If either measurement is old, reset encoder differences
             if(self.diffEncoderL > 1000 or self.diffEncoderR > 1000):
@@ -268,8 +273,8 @@ class botControl:
         """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
-        # data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
-        data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
+        data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        # data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
         f.write(' '.join(data) + '\n')
         f.close()
