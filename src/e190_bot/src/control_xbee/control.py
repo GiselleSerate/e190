@@ -150,6 +150,10 @@ class botControl:
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
             encoder_measurements = [x * math.pi / 720 for x in data[-2:]] #encoder readings as radians, 2d array
+            encoder_measurements[0] = data[-1] * math.pi / 720 #encoder readings as radians, 2d array
+            encoder_measurements[1] = data[-2] * math.pi / 720 #encoder readings as radians, 2d array
+
+            print("encoders: "+str(encoder_measurements[0]) + ' ' + str(encoder_measurements[1]))
 
             #how about velocity?
             time_diff = rospy.Time.now() - self.time
@@ -165,11 +169,11 @@ class botControl:
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
             # Update x and y with deltas 
-            self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
-            self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
+            self.Odom.pose.pose.position.x += del_s * math.cos(self.bot_angle + del_theta/2)
+            self.Odom.pose.pose.position.y += del_s * math.sin(self.bot_angle + del_theta/2)
 
             self.Odom.pose.pose.position.z = .0
-            self.bot_angle += del_theta
+            self.bot_angle += del_theta/2
             self.bot_angle = self.bot_angle % (2*math.pi) # Loop
             quat = quaternion_from_euler(.0, .0, self.bot_angle)
             self.Odom.pose.pose.orientation.x = quat[0]
