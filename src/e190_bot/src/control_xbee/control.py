@@ -176,7 +176,7 @@ class botControl:
 
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
-            encoder_measurements = [x * math.pi / 720 for x in data[-2:]] #encoder readings as radians, 2d array
+            encoder_measurements = [x * math.pi / 720 for x in [data[-1], data[-2]]] #encoder readings as radians: l, r
 
             # Calculate differences
             time_diff = rospy.Time.now() - self.time
@@ -198,16 +198,10 @@ class botControl:
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
-            print("odom pre: "+str(self.Odom.pose.pose.position.x)+" x "+str(self.Odom.pose.pose.position.x))
-
             # Update x and y with deltas 
-            self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
-            self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
+            self.Odom.pose.pose.position.x += del_s * math.cos(self.bot_angle + del_theta/2)
+            self.Odom.pose.pose.position.y += del_s * math.sin(self.bot_angle + del_theta/2)
 
-            print("odom post: "+str(self.Odom.pose.pose.position.x)+" x "+str(self.Odom.pose.pose.position.x))
-
-            # self.Odom.pose.pose.position.x = encoder_measurements[0]/10000.0 #this won't work for sure
-            # self.Odom.pose.pose.position.y = encoder_measurements[1]/10000.0
             self.Odom.pose.pose.position.z = .0
             self.bot_angle += del_theta
             self.bot_angle = self.bot_angle % (2*math.pi) # Loop
@@ -252,7 +246,7 @@ class botControl:
         """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','ENCL','ENCR'))
+        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','X','Y'))
         f.close()
 
     def log_cal(self, LPWM, RPWM, LAng, RAng):
@@ -277,7 +271,7 @@ class botControl:
         """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
-        data = [str(x) for x in [1,2,3,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        data = [str(x) for x in [self.time,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
         # data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
         f.write(' '.join(data) + '\n')
