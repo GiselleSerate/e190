@@ -165,15 +165,9 @@ class botControl:
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
-<<<<<<< HEAD
             # Update x and y with deltas
-            self.Odom.pose.pose.position.x += del_s * math.cos(del_theta/2)
-            self.Odom.pose.pose.position.y += del_s * math.sin(del_theta/2)
-=======
-            # Update x and y with deltas 
             self.Odom.pose.pose.position.x += del_s * math.cos(self.bot_angle + del_theta/2)
             self.Odom.pose.pose.position.y += del_s * math.sin(self.bot_angle + del_theta/2)
->>>>>>> 1a09099aa5040b5167a0d45a4a40938101e31e9f
 
             self.Odom.pose.pose.position.z = .0
             self.bot_angle += del_theta
