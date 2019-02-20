@@ -41,7 +41,7 @@ class botControl:
         self.address = '\x00\x0C'#you may use this to communicate with multiple bots
 
         self.ir_init()
-        
+
         #init an odometry instance, and configure odometry info
         self.odom_init()
 
@@ -67,6 +67,7 @@ class botControl:
             self.rate.sleep();
 
     def ir_init(self):
+        """Initializes ir sensor messages for the three sensors on our bot."""
         self.ir_L = ir_sensor()
         self.ir_C = ir_sensor()
         self.ir_R = ir_sensor()
@@ -164,6 +165,7 @@ class botControl:
                 self.diffEncoderL = 0
                 self.diffEncoderR = 0
 
+            # Changes in theta and distance with respect to the robot
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
@@ -201,10 +203,12 @@ class botControl:
         self.time = rospy.Time.now()
 
     def ir_cal(self, val):
-        return val
+        """Convert ir sensor data to meters. The effective range of our sensors
+        is from .2m to 1.5m. The best fit at this range was a power curve."""
+        return 242.76 * (val ** -1.075)
 
     def pubRangeSensor(self, ranges):
-        # May be you want to calibrate them now? Make a new function called "ir_cal"
+        """publish the sensor recordings"""
         self.ir_L.distance = self.ir_cal(ranges[0])
         self.ir_C.distance = self.ir_cal(ranges[1])
         self.ir_R.distance = self.ir_cal(ranges[2])
