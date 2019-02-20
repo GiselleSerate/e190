@@ -40,6 +40,8 @@ class botControl:
         print("Xbee setup successful")
         self.address = '\x00\x0C'#you may use this to communicate with multiple bots
 
+        self.ir_init()
+        
         #init an odometry instance, and configure odometry info
         self.odom_init()
 
