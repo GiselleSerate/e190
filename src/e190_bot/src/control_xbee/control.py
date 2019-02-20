@@ -212,7 +212,7 @@ class botControl:
         """Makes necesary headers for log file."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        f.write('{0} {1:^1} {2:^1} \n'.format('TIME','X','Y'))
+        f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} {5:^1} \n'.format('TIME','X','Y','LIR','CIR','RIR'))
         f.close()
 
     def log_pwm(self, LPWM, RPWM):
@@ -228,7 +228,7 @@ class botControl:
         """Logs data for debugging reference."""
         f = open(rospack.get_path('e190_bot')+"/data/"+self.file_name, 'a+')
 
-        data = [str(x) for x in [self.time,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y]]
+        data = [str(x) for x in [self.time,self.Odom.pose.pose.position.x,self.Odom.pose.pose.position.y,self.ir_L.distance,self.ir_C.distance,self.ir_R.distance]]
         # data = [str(x) for x in [self.time,self.diffEncoderL,self.diffEncoderR]]
 
         f.write(' '.join(data) + '\n')
