@@ -100,8 +100,11 @@ class botControl:
         """Takes in left and right angular velocities of wheels and outputs
         left and right PWM values."""
         # Force angular velocities to ints and scale to 0-255
-        LPWM = int(11.608*abs(LAvel)+3.2461)
-        RPWM = int(11.134*abs(RAvel)+6.983)
+        # LPWM = int(11.608*abs(LAvel)+3.2461)
+        # RPWM = int(11.134*abs(RAvel)+6.983)
+
+        LPWM = int(8.52*abs(LAvel)+6.36)
+        RPWM = int(8.61*abs(RAvel)+6.08)
 
         if(LPWM < 15):
             LPWM = 0 # Floor left
