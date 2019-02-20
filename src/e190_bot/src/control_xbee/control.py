@@ -8,6 +8,7 @@ import math # for trig functions
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from e190_bot.msg import ir_sensor
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 rospack = rospkg.RosPack()
@@ -51,9 +52,9 @@ class botControl:
 
         self.pubOdom = rospy.Publisher('/odom', Odometry, queue_size=10)
 
-        #self.pubDistL = rospy.Publisher('/distL', ir_sensor, queue_size=10)
-        #self.pubDistC = rospy.Publisher('/distC', ir_sensor, queue_size=10)
-        #self.pubDistR = rospy.Publisher('/distR', ir_sensor, queue_size=10)
+        self.pubDistL = rospy.Publisher('/distL', ir_sensor, queue_size=10)
+        self.pubDistC = rospy.Publisher('/distC', ir_sensor, queue_size=10)
+        self.pubDistR = rospy.Publisher('/distR', ir_sensor, queue_size=10)
         self.time = rospy.Time.now()
         self.count = 0;
 
@@ -63,10 +64,10 @@ class botControl:
             self.odom_pub();
             self.rate.sleep();
 
-    # def ir_init(self):
-    #     self.ir_L = ir_sensor()
-    #     self.ir_C = ir_sensor()
-    #     self.ir_R = ir_sensor()
+    def ir_init(self):
+        self.ir_L = ir_sensor()
+        self.ir_C = ir_sensor()
+        self.ir_R = ir_sensor()
 
     def odom_init(self):
         """Initializes the odometer variables for distance measurements."""
@@ -164,7 +165,7 @@ class botControl:
             del_theta = ((self.diffEncoderR - self.diffEncoderL) * self.wheel_radius)/(2 * self.bot_radius)
             del_s = ((self.diffEncoderR + self.diffEncoderL) * self.wheel_radius)/2
 
-            # Update x and y with deltas 
+            # Update x and y with deltas
             self.Odom.pose.pose.position.x += del_s * math.cos(self.bot_angle + del_theta/2)
             self.Odom.pose.pose.position.y += del_s * math.sin(self.bot_angle + del_theta/2)
 
@@ -190,23 +191,25 @@ class botControl:
 
             #about range sensors, update here
             range_measurements = data[:-2] #range readings are here, 3d array
-            #self.pubRangeSensor(range_measurements)
+            self.pubRangeSensor(range_measurements)
 
         if(self.data_logging):
             self.log_data();
 
         self.time = rospy.Time.now()
 
-    # def pubRangeSensor(self,ranges):
+    def ir_cal(self, val):
+        return val
 
-    #     #May be you want to calibrate them now? Make a new function called "ir_cal"
-    #     self.ir_L.distance = ir_cal(ranges[0])
-    #     self.ir_C.distance = ir_cal(ranges[1])
-    #     self.ir_R.distance = ir_cal(ranges[2])
+    def pubRangeSensor(self, ranges):
+        # May be you want to calibrate them now? Make a new function called "ir_cal"
+        self.ir_L.distance = self.ir_cal(ranges[0])
+        self.ir_C.distance = self.ir_cal(ranges[1])
+        self.ir_R.distance = self.ir_cal(ranges[2])
 
-    #     self.pubDistL.publish(self.ir_L)
-    #     self.pubDistC.publish(self.ir_C)
-    #     self.pubDistR.publish(self.ir_R)
+        self.pubDistL.publish(self.ir_L)
+        self.pubDistC.publish(self.ir_C)
+        self.pubDistR.publish(self.ir_R)
 
     def make_headers(self):
         """Makes necesary headers for log file."""
