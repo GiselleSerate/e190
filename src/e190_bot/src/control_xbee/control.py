@@ -209,8 +209,8 @@ class botControl:
 
     def pubRangeSensor(self, ranges):
         """publish the sensor recordings"""
-        self.ir_L.distance = self.ir_cal(ranges[0])
-        self.ir_C.distance = self.ir_cal(ranges[1])
+        self.ir_L.distance = self.ir_cal(ranges[1])
+        self.ir_C.distance = self.ir_cal(ranges[0])
         self.ir_R.distance = self.ir_cal(ranges[2])
 
         self.pubDistL.publish(self.ir_L)
