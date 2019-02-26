@@ -72,6 +72,37 @@ class botControl:
         self.ir_L = ir_sensor()
         self.ir_C = ir_sensor()
         self.ir_R = ir_sensor()
+        self.ir_L_broadcaster = tf.TransformBroadcaster()
+        self.ir_C_broadcaster = tf.TransformBroadcaster()
+        self.ir_R_broadcaster = tf.TransformBroadcaster()
+
+    def ir_tf(self):
+        """Broadcasts tf data transforming base_link to all ir sensors."""
+        # Left sensor: 0.09m up (+z), 0.06m left (+y)
+        self.ir_L_broadcaster.sendTransform(
+            (0.0, 0.06, 0.09),
+            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, -math.pi/2.0),
+            rospy.Time.now(),
+            "/irL",
+            "/base_link",
+        )
+        # Center sensor: 0.09 up (+z), 0.08 forward (+x)
+        self.ir_C_broadcaster.sendTransform(
+            (0.08, 0.0, 0.09)
+            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, .0),
+            rospy.Time.now(),
+            "/irC",
+            "/base_link",
+        )
+        # Right sensor: 0.09m up (+z), 0.06m right (-y)
+        self.ir_R_broadcaster.sendTransform(
+            (0.0, -0.06, 0.09),
+            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, math.pi/2.0),
+            rospy.Time.now(),
+            "/irR",
+            "/base_link",
+        )
+
 
     def odom_init(self):
         """Initializes the odometer variables for distance measurements."""
