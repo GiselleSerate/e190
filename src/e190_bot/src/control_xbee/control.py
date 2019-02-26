@@ -81,24 +81,24 @@ class botControl:
         # Left sensor: 0.09m up (+z), 0.06m left (+y)
         self.ir_L_broadcaster.sendTransform(
             (0.0, 0.06, 0.09),
-            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, -math.pi/2.0),
-            rospy.Time.now(),
+            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, math.pi/2.0),
+            self.time,
             "/irL",
             "/base_link",
         )
         # Center sensor: 0.09 up (+z), 0.08 forward (+x)
         self.ir_C_broadcaster.sendTransform(
-            (0.08, 0.0, 0.09)
+            (0.08, 0.0, 0.09),
             tf.transformations.quaternion_from_euler(.0, math.pi/2.0, .0),
-            rospy.Time.now(),
+            self.time,
             "/irC",
             "/base_link",
         )
         # Right sensor: 0.09m up (+z), 0.06m right (-y)
         self.ir_R_broadcaster.sendTransform(
             (0.0, -0.06, 0.09),
-            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, math.pi/2.0),
-            rospy.Time.now(),
+            tf.transformations.quaternion_from_euler(.0, math.pi/2.0, -math.pi/2.0),
+            self.time,
             "/irR",
             "/base_link",
         )
@@ -214,25 +214,32 @@ class botControl:
             self.Odom.pose.pose.orientation.y = quat[1]
             self.Odom.pose.pose.orientation.z = quat[2]
             self.Odom.pose.pose.orientation.w = quat[3]
+            
+            self.time = rospy.Time.now()
 
             # https://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
             self.odom_broadcaster.sendTransform(
                 (self.Odom.pose.pose.position.x, self.Odom.pose.pose.position.y, .0),
                 tf.transformations.quaternion_from_euler(.0, .0, self.bot_angle),
-                rospy.Time.now(),
+                self.time,
                 self.Odom.child_frame_id,
                 self.Odom.header.frame_id,
             )
+
+            # Broadcast ir transforms to tf
+            self.ir_tf();
 
             self.pubOdom.publish(self.Odom) # Publish in /odom topic
 
             range_measurements = data[:-2] # Range readings (there are 3)
             self.pubRangeSensor(range_measurements)
+        
+        else:
+            self.time = rospy.Time.now()
 
         if(self.data_logging):
             self.log_data();
 
-        self.time = rospy.Time.now()
 
     def ir_cal(self, val):
         """Convert ir sensor data to meters. The effective range of our sensors
