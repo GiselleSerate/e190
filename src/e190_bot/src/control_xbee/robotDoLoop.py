@@ -28,6 +28,9 @@ def robotDoLoop():
     cmd_step = 0
     sleep_times = {do_nothing: 0.5, go_forward: 2.0, do_rotation: 0.5}
 
+    # Wait 5 seconds, then run the loop
+    rospy.sleep(5)
+
     while not rospy.is_shutdown() and cmd_step < len(cmds):
         cmd = cmds[cmd_step]
         sleep_time = sleep_times[cmd]
