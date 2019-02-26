@@ -5,6 +5,7 @@ from xbee import XBee
 import serial
 import tf
 import math
+import numpy as np
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -160,8 +161,8 @@ class botControl:
             # self.diffEncoderL = encoder_measurements[0] - self.last_encoder_measurementL
             # self.diffEncoderR = encoder_measurements[1] - self.last_encoder_measurementR
 
-            encoder_measurementsL = data[4] * math.pi / 720.0 # TODO: Until we fix the Teensy code, compensate for switched encoders
-            encoder_measurementsR = data[3] * math.pi / 720.0
+            encoder_measurementsL = data[4] * np.math.pi / 720.0 # TODO: Until we fix the Teensy code, compensate for switched encoders
+            encoder_measurementsR = data[3] * np.math.pi / 720.0
 
             # Calculate how many radians the encoders have moved since the last odom measurement
             self.diffEncoderL = encoder_measurementsL - self.last_encoder_measurementL
